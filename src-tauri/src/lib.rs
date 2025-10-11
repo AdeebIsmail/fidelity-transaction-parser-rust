@@ -8,8 +8,6 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-/// List entries (file and directory names) in the given directory path.
-/// Returns a vector of file names or an error string.
 #[tauri::command]
 fn list_dir(path: String) -> Result<Vec<String>, String> {
     let dir: &Path = Path::new(&path);
@@ -23,7 +21,6 @@ fn list_dir(path: String) -> Result<Vec<String>, String> {
     Ok(entries)
 }
 
-/// Parse a CSV file and return rows as arrays of strings (Vec<Vec<String>>).
 #[tauri::command]
 fn parse_csv(path: String) -> Result<Vec<Vec<String>>, String> {
     let mut rdr = csv::Reader::from_path(path).map_err(|e| format!("csv open error: {}", e))?;

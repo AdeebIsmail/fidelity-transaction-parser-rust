@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import DisplayCSV from "./components/DisplayCSV.vue";
 
 const directoryContents = ref("");
 const directoryPath = ref(
@@ -8,23 +9,32 @@ const directoryPath = ref(
 );
 let options = ref<string[]>([]);
 
+const selectedFile = ref("");
+const showCSVViewer = ref(false);
+
 async function readDirectory() {
   try {
-    // If using list_dir (returns array)
     const files = await invoke<string[]>("list_dir", {
       path: directoryPath.value,
     });
-    options.value = files; // Populate the options array
-    directoryContents.value = `Found ${files.length} files`;
+    options.value = files;
+    const csvCount = files.filter((file) => getFileType(file) === "csv").length;
+    directoryContents.value = `Found ${files.length} files (${csvCount} CSV files)`;
   } catch (error) {
     directoryContents.value = `Error: ${error}`;
-    options.value = []; // Clear options on error
+    options.value = [];
   }
 }
 
 function selectFile(filename: string) {
-  console.log("Selected file:", filename);
-  // TODO: Implement file parsing here
+  console.log("Selected CSV file:", filename);
+  selectedFile.value = filename;
+  showCSVViewer.value = true;
+}
+
+function closeCSVViewer() {
+  showCSVViewer.value = false;
+  selectedFile.value = "";
 }
 
 function getFileIcon(filename: string): string {
@@ -46,6 +56,12 @@ function getFileIcon(filename: string): string {
     default:
       return "📄";
   }
+}
+
+function getFileType(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  if (ext != undefined) return ext;
+  return "";
 }
 </script>
 
@@ -88,8 +104,13 @@ function getFileIcon(filename: string): string {
             <li
               v-for="(item, index) in options"
               :key="index"
-              class="file-item"
-              @click="selectFile(item)"
+              :class="[
+                'file-item',
+                getFileType(item) === 'csv'
+                  ? 'file-item-clickable'
+                  : 'file-item-disabled',
+              ]"
+              @click="getFileType(item) === 'csv' ? selectFile(item) : null"
             >
               <span class="file-icon">
                 {{ getFileIcon(item) }}
@@ -109,13 +130,23 @@ function getFileIcon(filename: string): string {
         </div>
       </div>
     </main>
+
+    <div v-if="showCSVViewer" class="modal-overlay" @click="closeCSVViewer">
+      <div class="modal-content" @click.stop>
+        <DisplayCSV
+          :filename="selectedFile"
+          :directory-path="directoryPath"
+          @close="closeCSVViewer"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #368727 0%, #3c8c73 100%);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -190,14 +221,14 @@ function getFileIcon(filename: string): string {
 
 .path-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #10b981;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .search-btn {
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #368727 0%, #3c8c73 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -213,7 +244,7 @@ function getFileIcon(filename: string): string {
 
 .search-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
 }
 
 .search-btn:active {
@@ -261,15 +292,29 @@ function getFileIcon(filename: string): string {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.file-item:hover {
-  background: #667eea;
+.file-item-clickable {
+  cursor: pointer;
+}
+
+.file-item-clickable:hover {
+  background: #62c251;
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+}
+
+.file-item-disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.file-item-disabled:hover {
+  background: #f1f5f9;
+  transform: none;
+  box-shadow: none;
 }
 
 .file-icon {
@@ -292,7 +337,23 @@ function getFileIcon(filename: string): string {
   border-radius: 6px;
 }
 
-.file-item:hover .file-index {
+.file-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: #10b981;
+  color: white;
+  margin-left: 0.5rem;
+}
+
+.file-badge.disabled {
+  background: #6b7280;
+  color: #d1d5db;
+}
+
+.file-item-clickable:hover .file-index,
+.file-item-clickable:hover .file-badge {
   background: rgba(255, 255, 255, 0.2);
   opacity: 1;
 }
@@ -307,6 +368,34 @@ function getFileIcon(filename: string): string {
   font-size: 3rem;
   display: block;
   margin-bottom: 1rem;
+}
+
+.small-text {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  margin-top: 0.5rem;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: hidden;
 }
 
 /* Responsive design */
