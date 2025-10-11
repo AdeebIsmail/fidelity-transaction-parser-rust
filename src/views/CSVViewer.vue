@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ref } from "vue";
 import DisplayCSV from "../components/DisplayCSV.vue";
+// import { Bar } from "vue-chartjs";
 
 const route = useRoute();
 const router = useRouter();
@@ -10,8 +12,12 @@ const router = useRouter();
 const filename = computed(() => route.params.filename as string);
 const directoryPath = computed(() => (route.query.path as string) || "");
 
+const displayCSV = ref(false);
 function goBack() {
   router.push("/");
+}
+function showModal() {
+  displayCSV.value = !displayCSV.value;
 }
 </script>
 
@@ -28,13 +34,13 @@ function goBack() {
         <span class="breadcrumb-file">{{ filename }}</span>
       </div>
     </div>
-
-    <div class="viewer-container">
-      <!-- <DisplayCSV
+    <button @click="showModal" class="back-btn">📊 Display CSV</button>
+    <div class="viewer-container" v-if="displayCSV">
+      <DisplayCSV
         :filename="filename"
         :directory-path="directoryPath"
-        @close="goBack"
-      /> -->
+        @close="showModal"
+      />
     </div>
   </div>
 </template>
