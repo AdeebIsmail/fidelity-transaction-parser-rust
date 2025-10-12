@@ -18,6 +18,7 @@ async function parseCSV() {
   try {
     const fullPath = `${props.directoryPath}/${props.filename}`;
     const data = await invoke<string[][]>("parse_csv", { path: fullPath });
+    invoke("parse_transactions", { path: fullPath });
     csvData.value = data;
   } catch (err) {
     error.value = `Error parsing CSV: ${err}`;
@@ -34,10 +35,6 @@ onMounted(() => {
 const emit = defineEmits<{
   close: [];
 }>();
-
-function closeView() {
-  emit("close");
-}
 </script>
 
 <template>
@@ -47,9 +44,9 @@ function closeView() {
         <span class="csv-icon">📊</span>
         {{ filename }}
       </h2>
-      <button @click="closeView" class="close-btn">
+      <!-- <button @click="closeView" class="close-btn">
         <span>✕</span>
-      </button>
+      </button> -->
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -102,10 +99,11 @@ function closeView() {
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  max-height: 80vh;
-  overflow: hidden;
+  /* max-height: 80vh; */
+  /* width: 100vw; */
+  /* overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: column; */
 }
 
 .csv-header {

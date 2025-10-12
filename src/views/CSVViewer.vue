@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+
 import DisplayCSV from "../components/DisplayCSV.vue";
-// import { Bar } from "vue-chartjs";
+import TransactionDashboard from "../components/TransactionDashboard.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -12,13 +13,17 @@ const router = useRouter();
 const filename = computed(() => route.params.filename as string);
 const directoryPath = computed(() => (route.query.path as string) || "");
 
-const displayCSV = ref(false);
+const viewMode = ref<"table" | "charts">("table");
+
 function goBack() {
   router.push("/");
 }
-function showModal() {
-  displayCSV.value = !displayCSV.value;
+
+function toggleView(mode: "table" | "charts") {
+  viewMode.value = mode;
 }
+
+// Mock transaction data for demo - replace with actual CSV parsing
 </script>
 
 <template>
@@ -34,13 +39,35 @@ function showModal() {
         <span class="breadcrumb-file">{{ filename }}</span>
       </div>
     </div>
-    <button @click="showModal" class="back-btn">📊 Display CSV</button>
-    <div class="viewer-container" v-if="displayCSV">
+
+    <!-- View Toggle Buttons -->
+    <div class="view-controls">
+      <button
+        @click="toggleView('table')"
+        :class="['view-btn', { active: viewMode === 'table' }]"
+      >
+        <span class="btn-icon">📋</span>
+        Table View
+      </button>
+      <button
+        @click="toggleView('charts')"
+        :class="['view-btn', { active: viewMode === 'charts' }]"
+      >
+        <span class="btn-icon">📊</span>
+        Charts View
+      </button>
+    </div>
+
+    <!-- Content Based on View Mode -->
+    <div class="viewer-container">
       <DisplayCSV
+        v-if="viewMode === 'table'"
         :filename="filename"
         :directory-path="directoryPath"
-        @close="showModal"
+        @close="goBack"
       />
+
+      <TransactionDashboard v-if="viewMode === 'charts'" />
     </div>
   </div>
 </template>
@@ -48,7 +75,7 @@ function showModal() {
 <style scoped>
 .csv-viewer-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #368727 0%, #3c8c73 100%);
+  background: linear-gradient(135deg, #368727 0%, #5c9951 100%);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   padding: 1rem;
 }
@@ -65,6 +92,47 @@ function showModal() {
   color: white;
 }
 
+.view-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.view-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.view-btn.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #2d3748;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+}
+
 .back-btn {
   background: rgba(255, 255, 255, 0.2);
   color: white;
@@ -77,6 +145,7 @@ function showModal() {
   align-items: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
+  transform: scale(0.8);
 }
 
 .back-btn:hover {
@@ -110,8 +179,9 @@ function showModal() {
 }
 
 .viewer-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 @media (max-width: 768px) {

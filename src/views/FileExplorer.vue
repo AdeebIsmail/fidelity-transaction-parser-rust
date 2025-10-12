@@ -134,7 +134,7 @@ function getFileType(filename: string): string {
 <style scoped>
 .file-explorer {
   min-height: 100vh;
-  background: linear-gradient(135deg, #368727 0%, #3c8c73 100%);
+  background: linear-gradient(135deg, #368727 0%, #5c9951 100%);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -208,12 +208,12 @@ function getFileType(filename: string): string {
 
 .path-input:focus {
   outline: none;
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: #368727;
+  box-shadow: 0 0 0 3px rgba(54, 135, 39, 0.1);
 }
 
 .search-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #368727 0%, #5c9951 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -227,9 +227,9 @@ function getFileType(filename: string): string {
 }
 
 .search-btn:hover {
-  background: linear-gradient(135deg, #059669, #047857);
+  background: linear-gradient(135deg, #327b25 0%, #5c9951 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(54, 135, 39, 0.3);
 }
 
 .btn-icon {
@@ -237,12 +237,12 @@ function getFileType(filename: string): string {
 }
 
 .status-message {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: #f0f7f0;
+  border: 1px solid #a7d3a7;
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
-  color: #0369a1;
+  color: #2d6b20;
   font-weight: 500;
 }
 
@@ -285,9 +285,9 @@ function getFileType(filename: string): string {
 }
 
 .file-item-clickable:hover {
-  background: #f8fafc;
+  background: #f7fcf7;
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(54, 135, 39, 0.15);
 }
 
 .file-item-disabled {
@@ -312,7 +312,7 @@ function getFileType(filename: string): string {
 }
 
 .file-index {
-  background: #e5e7eb;
+  background: #d1d5db;
   color: #6b7280;
   font-size: 0.75rem;
   font-weight: 600;
@@ -322,7 +322,7 @@ function getFileType(filename: string): string {
 }
 
 .file-item-clickable .file-index {
-  background: #10b981;
+  background: #368727;
   color: white;
 }
 
