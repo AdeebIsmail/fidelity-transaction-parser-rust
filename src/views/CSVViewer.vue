@@ -182,6 +182,7 @@ function toggleView(mode: "table" | "charts") {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {

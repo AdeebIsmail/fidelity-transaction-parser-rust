@@ -11,13 +11,16 @@ import TransactionDoughnutChart from "./charts/TransactionDoughnutChart.vue";
 const income = ref(0.0);
 const expenses = ref(0.0);
 const size = ref(0);
+const transactions = ref([]);
 
 async function retrieveTransactionData() {
   income.value = parseFloat(await invoke<string>("get_income"));
   expenses.value = parseFloat(await invoke<string>("get_expenses"));
   size.value = parseInt(await invoke<string>("get_transaction_count"));
+  transactions.value = await invoke<[]>("get_transactions");
   console.log("Income:", income.value);
   console.log("Expenses:", expenses.value);
+  console.log("Transactions:", transactions);
 }
 
 onMounted(() => {
@@ -34,17 +37,22 @@ onMounted(() => {
       </h2>
       <p class="dashboard-subtitle">Visualizing {{ size }} transactions</p>
     </div>
-
     <div class="charts-grid">
+      <!-- <TransactionDoughnutChart :income="income" :expenses="expenses" /> -->
+      <TransactionDoughnutChart :income="income" :expenses="expenses" />
+      <TransactionDoughnutChart :income="income" :expenses="expenses" />
+
       <!-- Row 1: Overview charts -->
-      <div class="chart-row">
-        <div class="chart-col">
-          <TransactionDoughnutChart :income="income" :expenses="expenses" />
-        </div>
-        <!-- <div class="chart-col">
+      <!-- <div class="chart-wrapper">
+        <TransactionDoughnutChart :income="income" :expenses="expenses" />
+      </div> -->
+      <!-- <div class="chart-wrapper">
+        <TransactionDoughnutChart :income="income" :expenses="expenses" />
+      </div> -->
+
+      <!-- <div class="chart-col">
           <TransactionPieChart :transactions="transactions" />
         </div> -->
-      </div>
 
       <!-- Row 2: Trends -->
       <!-- <div class="chart-row full-width">
@@ -57,7 +65,7 @@ onMounted(() => {
       </div> -->
     </div>
 
-    <div class="dashboard-footer">
+    <!-- <div class="dashboard-footer">
       <div class="stats-summary">
         <div class="stat-card">
           <span class="stat-label">Total Transactions</span>
@@ -72,7 +80,7 @@ onMounted(() => {
           <span class="stat-value">${{ (income + expenses).toFixed(2) }}</span>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -83,13 +91,13 @@ onMounted(() => {
   padding: 0;
   margin: 0;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .dashboard-header {
   text-align: center;
   margin-bottom: 2rem;
-  padding: 2rem;
-  /* background: linear-gradient(135deg, #368727 0%, #347428 100%); */
+  padding: 1rem;
   border-radius: 16px;
   color: white;
 }
@@ -116,8 +124,28 @@ onMounted(() => {
 
 .charts-grid {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-wrapper {
+  flex: 1;
+  overflow: hidden;
+  background: transparent;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.chart-wrapper {
+  flex: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .chart-row {

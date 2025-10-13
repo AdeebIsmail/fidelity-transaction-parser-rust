@@ -5,7 +5,7 @@ use std::path::{ Path, PathBuf };
 use std::sync::Mutex;
 use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Transaction {
     date: String,
     description: String,
@@ -78,6 +78,11 @@ fn parse_transactions(path: String) -> Result<String, String> {
     drop(global_transactions); // Release lock early
 
     Ok(format!("Loaded {} transactions into memory", transaction_count))
+}
+#[tauri::command]
+fn get_transactions() -> Vec<Transaction> {
+    let transactions = TRANSACTIONS.lock().unwrap();
+    transactions.clone()
 }
 
 #[tauri::command]
@@ -162,7 +167,8 @@ pub fn run() {
                 parse_transactions,
                 get_transaction_count,
                 get_income,
-                get_expenses
+                get_expenses,
+                get_transactions
             ]
         )
         .run(tauri::generate_context!())
