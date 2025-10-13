@@ -1,10 +1,14 @@
 <template>
   <div class="chart-container">
     <h3 class="chart-title">
-      <span class="chart-icon">📈</span>
-      Transaction Amount Over Time
+      <span class="chart-icon">🥧</span>
+      Transaction Categories
     </h3>
-    <Line :data="chartData" :options="chartOptions" class="chart" />
+    <div class="chart-content">
+      <div class="chart-section">
+        <Line :data="chartData" :options="chartOptions" class="chart" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -34,59 +38,73 @@ ChartJS.register(
   Filler
 );
 
-interface TransactionData {
+interface Transaction {
   date: string;
-  amount: number;
   description: string;
-  [key: string]: any;
+  amount: number; // Amount in cents
+  account_name: string;
+  category: string;
+  transaction_type: string;
+  sub_category: string;
+  hidden: boolean;
 }
 
 const props = defineProps<{
-  transactions: TransactionData[];
+  transactions: Transaction[];
 }>();
 
 const chartData = computed(() => {
-  // Sort transactions by date
-  const sortedTransactions = [...props.transactions].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  // Filter out hidden transactions and sort by date
+  const visibleTransactions = props.transactions
+    .filter((tx) => !tx.hidden && tx.sub_category != "Credit card payment")
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Calculate running balance
+  // Calculate running balance (convert from cents to dollars)
   let runningBalance = 0;
-  const balanceData = sortedTransactions.map((tx) => {
-    runningBalance += tx.amount;
+  const balanceData = visibleTransactions.map((tx) => {
+    runningBalance += tx.amount / 100; // Convert cents to dollars
     return runningBalance;
   });
 
   return {
-    labels: sortedTransactions.map((tx) =>
-      new Date(tx.date).toLocaleDateString()
+    labels: visibleTransactions.map((tx) =>
+      new Date(tx.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "2-digit",
+      })
     ),
     datasets: [
       {
-        label: "Transaction Amount",
-        backgroundColor: "rgba(54, 135, 39, 0.2)",
-        borderColor: "rgba(54, 135, 39, 1)",
-        borderWidth: 3,
-        pointBackgroundColor: "rgba(54, 135, 39, 1)",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        data: props.transactions.map((tx) => tx.amount),
-        tension: 0.4,
-      },
-      {
         label: "Running Balance",
-        backgroundColor: "rgba(60, 140, 115, 0.1)",
-        borderColor: "rgba(60, 140, 115, 1)",
-        borderWidth: 2,
-        pointBackgroundColor: "rgba(60, 140, 115, 1)",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        borderColor: "rgba(16, 185, 129, 1)",
+        borderWidth: 3,
+        pointBackgroundColor: "rgba(16, 185, 129, 1)",
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
         pointRadius: 4,
         data: balanceData,
         tension: 0.4,
         fill: true,
+      },
+      {
+        label: "Individual Transactions",
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: "rgba(59, 130, 246, 1)",
+        borderWidth: 2,
+        pointBackgroundColor: (context: any) => {
+          const transaction = visibleTransactions[context.dataIndex];
+          return transaction?.transaction_type === "Income"
+            ? "rgba(34, 197, 94, 1)"
+            : "rgba(239, 68, 68, 1)";
+        },
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        data: visibleTransactions.map((tx) => tx.amount / 100), // Convert cents to dollars
+        tension: 0.2,
+        showLine: false, // Show only points for individual transactions
       },
     ],
   };
@@ -114,13 +132,39 @@ const chartOptions = computed(() => ({
       backgroundColor: "rgba(0, 0, 0, 0.8)",
       titleColor: "#fff",
       bodyColor: "#fff",
-      borderColor: "rgba(54, 135, 39, 1)",
+      borderColor: "rgba(16, 185, 129, 1)",
       borderWidth: 1,
       cornerRadius: 8,
       displayColors: true,
       callbacks: {
         label: function (context: any) {
-          return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+          const datasetLabel = context.dataset.label;
+          const value = context.parsed.y.toFixed(2);
+
+          if (datasetLabel === "Individual Transactions") {
+            // Get the transaction details for individual transaction points
+            const visibleTransactions = props.transactions
+              .filter(
+                (tx) => !tx.hidden && tx.sub_category != "Credit card payment"
+              )
+              .sort(
+                (a, b) =>
+                  new Date(a.date).getTime() - new Date(b.date).getTime()
+              );
+            const transaction = visibleTransactions[context.dataIndex];
+
+            if (transaction) {
+              return [
+                `${transaction.transaction_type}: $${value}`,
+                `Category: ${transaction.category}`,
+                `Description: ${transaction.description.substring(0, 30)}${
+                  transaction.description.length > 30 ? "..." : ""
+                }`,
+              ];
+            }
+          }
+
+          return `${datasetLabel}: $${value}`;
         },
       },
     },
@@ -164,12 +208,14 @@ const chartOptions = computed(() => ({
 .chart-container {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  overflow: hidden; /* Changed from hidden to allow legend to show completely */
+  height: 100%; /* Increased height to accommodate larger legend */
   width: 100%;
-  max-width: 100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .chart-title {
@@ -179,7 +225,7 @@ const chartOptions = computed(() => ({
   font-size: 1.2rem;
   font-weight: 600;
   color: #2d3748;
-  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .chart-icon {
@@ -187,8 +233,29 @@ const chartOptions = computed(() => ({
 }
 
 .chart {
-  height: 300px;
+  /* height: 350px; */
   width: 100%;
-  max-width: 100%;
+  /* flex-shrink: 0;  */
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chart-section {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
 }
 </style>

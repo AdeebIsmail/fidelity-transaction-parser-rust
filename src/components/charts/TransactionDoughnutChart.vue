@@ -43,7 +43,7 @@ const props = defineProps<{
   expenses: number;
 }>();
 
-const netAmount = computed(() => props.income - props.expenses);
+const netAmount = computed(() => props.income + props.expenses);
 
 const chartData = computed(() => ({
   labels: ["Income", "Expenses"],
@@ -102,7 +102,7 @@ const chartOptions = computed(() => ({
   padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  height: 100%;
+  height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;

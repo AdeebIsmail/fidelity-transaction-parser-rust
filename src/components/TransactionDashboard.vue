@@ -3,24 +3,35 @@ import { computed } from "vue";
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
-import TransactionLineChart from "./TransactionLineChart.vue";
-import TransactionPieChart from "./TransactionPieChart.vue";
-import TransactionBarChart from "./TransactionBarChart.vue";
+import TransactionLineChart from "./charts/TransactionLineChart.vue";
+import TransactionPieChart from "./charts/TransactionPieChart.vue";
+import TransactionBarChart from "./charts/TransactionBarChart.vue";
 import TransactionDoughnutChart from "./charts/TransactionDoughnutChart.vue";
+
+interface Transaction {
+  date: string;
+  description: string;
+  amount: number;
+  account_name: string;
+  category: string;
+  transaction_type: string;
+  sub_category: string;
+  hidden: boolean;
+}
 
 const income = ref(0.0);
 const expenses = ref(0.0);
 const size = ref(0);
-const transactions = ref([]);
+const transactions = ref<Transaction[]>([]);
 
 async function retrieveTransactionData() {
   income.value = parseFloat(await invoke<string>("get_income"));
   expenses.value = parseFloat(await invoke<string>("get_expenses"));
   size.value = parseInt(await invoke<string>("get_transaction_count"));
   transactions.value = await invoke<[]>("get_transactions");
-  console.log("Income:", income.value);
-  console.log("Expenses:", expenses.value);
-  console.log("Transactions:", transactions);
+  transactions.value.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
 }
 
 onMounted(() => {
@@ -40,7 +51,8 @@ onMounted(() => {
     <div class="charts-grid">
       <!-- <TransactionDoughnutChart :income="income" :expenses="expenses" /> -->
       <TransactionDoughnutChart :income="income" :expenses="expenses" />
-      <TransactionDoughnutChart :income="income" :expenses="expenses" />
+      <TransactionPieChart :transactions="transactions" />
+      <TransactionLineChart :transactions="transactions" />
 
       <!-- Row 1: Overview charts -->
       <!-- <div class="chart-wrapper">
@@ -65,7 +77,7 @@ onMounted(() => {
       </div> -->
     </div>
 
-    <!-- <div class="dashboard-footer">
+    <div class="dashboard-footer">
       <div class="stats-summary">
         <div class="stat-card">
           <span class="stat-label">Total Transactions</span>
@@ -73,14 +85,17 @@ onMounted(() => {
         </div>
         <div class="stat-card">
           <span class="stat-label">Date Range</span>
-          <span class="stat-value">{{ -1 }}</span>
+          <span class="stat-value"
+            >{{ transactions[0].date }} -
+            {{ transactions[transactions.length - 1].date }}</span
+          >
         </div>
         <div class="stat-card">
           <span class="stat-label">Total Profit</span>
           <span class="stat-value">${{ (income + expenses).toFixed(2) }}</span>
         </div>
       </div>
-    </div> -->
+    </div>
   </div>
 </template>
 

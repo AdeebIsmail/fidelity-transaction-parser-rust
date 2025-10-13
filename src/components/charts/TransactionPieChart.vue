@@ -4,7 +4,11 @@
       <span class="chart-icon">🥧</span>
       Transaction Categories
     </h3>
-    <Pie :data="chartData" :options="chartOptions" class="chart" />
+    <div class="chart-content">
+      <div class="chart-section">
+        <Pie :data="chartData" :options="chartOptions" class="chart" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -15,26 +19,31 @@ import { Pie } from "vue-chartjs";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-interface TransactionData {
-  amount: number;
+interface Transaction {
+  date: string;
   description: string;
-  category?: string;
-  [key: string]: any;
+  amount: number; // Amount in cents
+  account_name: string;
+  category: string;
+  transaction_type: string;
+  sub_category: string;
+  hidden: boolean;
 }
 
 const props = defineProps<{
-  transactions: TransactionData[];
+  transactions: Transaction[];
 }>();
 
 const chartData = computed(() => {
-  // Group transactions by category or description
   const categoryMap = new Map<string, number>();
 
-  props.transactions.forEach((tx) => {
-    const category = tx.category || categorizeTransaction(tx.description);
-    const currentAmount = categoryMap.get(category) || 0;
-    categoryMap.set(category, currentAmount + Math.abs(tx.amount));
-  });
+  props.transactions
+    .filter((tx) => !tx.hidden && tx.transaction_type == "Expenses")
+    .forEach((tx) => {
+      const category = tx.category;
+      const currentAmount = categoryMap.get(category) || 0;
+      categoryMap.set(category, currentAmount + Math.abs(tx.amount / 100));
+    });
 
   const categories = Array.from(categoryMap.keys());
   const amounts = Array.from(categoryMap.values());
@@ -44,18 +53,7 @@ const chartData = computed(() => {
     datasets: [
       {
         data: amounts,
-        backgroundColor: [
-          "#10b981", // Green
-          "#3b82f6", // Blue
-          "#f59e0b", // Amber
-          "#ef4444", // Red
-          "#8b5cf6", // Purple
-          "#06b6d4", // Cyan
-          "#f97316", // Orange
-          "#84cc16", // Lime
-          "#ec4899", // Pink
-          "#6b7280", // Gray
-        ],
+        backgroundColor: generateColors(categories.length), // Dynamic color generation
         borderColor: "#ffffff",
         borderWidth: 2,
         hoverBorderWidth: 3,
@@ -65,55 +63,50 @@ const chartData = computed(() => {
   };
 });
 
-// Simple transaction categorization
-function categorizeTransaction(description: string): string {
-  const desc = description.toLowerCase();
+// Function to generate colors dynamically based on number of categories
+function generateColors(count: number): string[] {
+  const baseColors = [
+    "#10b981",
+    "#3b82f6",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#06b6d4",
+    "#f97316",
+    "#84cc16",
+    "#ec4899",
+    "#6b7280",
+    "#14b8a6",
+    "#f43f5e",
+    "#a78bfa",
+    "#34d399",
+    "#fbbf24",
+    "#fb7185",
+    "#60a5fa",
+    "#4ade80",
+    "#fa8c4a",
+    "#c084fc",
+    "#2dd4bf",
+    "#94a3b8",
+    "#38bdf8",
+    "#22c55e",
+  ];
 
-  if (
-    desc.includes("grocery") ||
-    desc.includes("food") ||
-    desc.includes("restaurant")
-  ) {
-    return "Food & Dining";
-  } else if (
-    desc.includes("gas") ||
-    desc.includes("fuel") ||
-    desc.includes("transportation")
-  ) {
-    return "Transportation";
-  } else if (
-    desc.includes("shopping") ||
-    desc.includes("store") ||
-    desc.includes("retail")
-  ) {
-    return "Shopping";
-  } else if (
-    desc.includes("bill") ||
-    desc.includes("utility") ||
-    desc.includes("electric")
-  ) {
-    return "Bills & Utilities";
-  } else if (
-    desc.includes("entertainment") ||
-    desc.includes("movie") ||
-    desc.includes("game")
-  ) {
-    return "Entertainment";
-  } else if (
-    desc.includes("health") ||
-    desc.includes("medical") ||
-    desc.includes("pharmacy")
-  ) {
-    return "Healthcare";
-  } else if (
-    desc.includes("transfer") ||
-    desc.includes("deposit") ||
-    desc.includes("withdrawal")
-  ) {
-    return "Transfers";
-  } else {
-    return "Other";
+  // If we need more colors than in our base array, generate additional ones
+  if (count <= baseColors.length) {
+    return baseColors.slice(0, count);
   }
+
+  // Generate additional colors using HSL
+  const colors = [...baseColors];
+  for (let i = baseColors.length; i < count; i++) {
+    const hue = (i * 137.508) % 360; // Golden angle for good distribution
+    const saturation = 65 + (i % 3) * 10; // Vary saturation slightly
+    const lightness = 50 + (i % 4) * 5; // Vary lightness slightly
+    colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+  }
+
+  return colors;
 }
 
 const chartOptions = computed(() => ({
@@ -130,14 +123,24 @@ const chartOptions = computed(() => ({
   plugins: {
     legend: {
       position: "bottom" as const,
-      maxHeight: 120,
+      maxHeight: 300, // Increased further to ensure all labels fit
+      onClick: (_e: any, legendItem: any, legend: any) => {
+        // Toggle the dataset visibility
+        const index = legendItem.index;
+        const chart = legend.chart;
+        const meta = chart.getDatasetMeta(0);
+
+        meta.data[index].hidden = !meta.data[index].hidden;
+        chart.update();
+      },
       labels: {
         usePointStyle: true,
-        padding: 10,
+        padding: 12, // Reduced padding slightly to fit more items
         boxWidth: 12,
         font: {
-          size: 11,
+          size: 11, // Slightly smaller font to fit more labels
         },
+        textAlign: "left" as const,
         generateLabels: function (chart: any) {
           const data = chart.data;
           if (data.labels.length && data.datasets.length) {
@@ -148,13 +151,25 @@ const chartOptions = computed(() => ({
                 0
               );
               const percentage = ((value / total) * 100).toFixed(1);
+              // Truncate very long labels to prevent overflow
+              const displayLabel =
+                label.length > 20 ? label.substring(0, 17) + "..." : label;
+
+              // Check if this data point is hidden
+              const meta = chart.getDatasetMeta(0);
+              const isHidden = meta && meta.data[i] && meta.data[i].hidden;
+
               return {
-                text: `${label}: ${percentage}%`,
-                fillStyle: data.datasets[0].backgroundColor[i],
-                strokeStyle: data.datasets[0].borderColor,
-                lineWidth: data.datasets[0].borderWidth,
-                pointStyle: "circle",
-                hidden: false,
+                text: `${displayLabel}: ${percentage}%`,
+                fillStyle: isHidden
+                  ? "transparent"
+                  : data.datasets[0].backgroundColor[i],
+                strokeStyle: isHidden
+                  ? data.datasets[0].backgroundColor[i]
+                  : data.datasets[0].borderColor,
+                lineWidth: isHidden ? 2 : data.datasets[0].borderWidth,
+                pointStyle: isHidden ? "dash" : "circle", // Use dash when hidden
+                hidden: false, // Keep the legend item visible
                 index: i,
               };
             });
@@ -177,6 +192,7 @@ const chartOptions = computed(() => ({
             0
           );
           const percentage = ((context.parsed / total) * 100).toFixed(1);
+          // Format as currency since amounts are already converted from cents
           return `${context.label}: $${context.parsed.toFixed(
             2
           )} (${percentage}%)`;
@@ -191,14 +207,14 @@ const chartOptions = computed(() => ({
 .chart-container {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
-  /* width: 45vw;
-  height: 40vh; */
-  overflow: hidden;
+  overflow: hidden; /* Changed from hidden to allow legend to show completely */
+  height: 100%; /* Increased height to accommodate larger legend */
+  width: 100%;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .chart-title {
@@ -208,7 +224,7 @@ const chartOptions = computed(() => ({
   font-size: 1.2rem;
   font-weight: 600;
   color: #2d3748;
-  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .chart-icon {
@@ -216,10 +232,29 @@ const chartOptions = computed(() => ({
 }
 
 .chart {
-  height: 280px;
+  /* height: 350px; */
   width: 100%;
-  max-width: 100%;
+  /* flex-shrink: 0;  */
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chart-section {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 0;
 }
 </style>
