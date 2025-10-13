@@ -2,6 +2,9 @@
 
 A modern desktop application for parsing, analyzing, and visualizing financial transaction data from Fidelity CSV exports. Built with Tauri, Rust, Vue 3, and TypeScript.
 
+![Dashboard Screenshot](./images/main_screen.png)
+![Dashboard Screenshot](./images/charts.png)
+
 ## 📊 Data Processing
 
 ### Transaction Structure
