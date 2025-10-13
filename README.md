@@ -1,7 +1,35 @@
-# Tauri + Vue + TypeScript
+# 🏦 Fidelity Transaction Parser
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+A modern desktop application for parsing, analyzing, and visualizing financial transaction data from Fidelity CSV exports. Built with Tauri, Rust, Vue 3, and TypeScript.
 
-## Recommended IDE Setup
+## 📊 Data Processing
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### Transaction Structure
+
+```typescript
+interface Transaction {
+  date: string; // Transaction date
+  description: string; // Transaction description
+  amount: number; // Amount in cents
+  account_name: string; // Account identifier
+  category: string; // Primary category
+  transaction_type: string; // "Income" or "Expenses"
+  sub_category: string; // Detailed subcategory
+  hidden: boolean; // Visibility flag
+}
+```
+
+### CSV Format Support
+
+The application expects Fidelity CSV exports with the following columns:
+
+1. Date
+2. Description
+3. Amount
+4. Account Name
+5. Transaction Type
+6. Category
+7. Sub Category
+8. Hidden (optional)
+
+The CSV can be downloaded from Fidelity's website under the new version of Full View.

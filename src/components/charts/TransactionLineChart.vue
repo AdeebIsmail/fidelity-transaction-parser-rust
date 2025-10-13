@@ -1,8 +1,8 @@
 <template>
   <div class="chart-container">
     <h3 class="chart-title">
-      <span class="chart-icon">🥧</span>
-      Transaction Categories
+      <span class="chart-icon">📈</span>
+      Transaction Amount Over Time
     </h3>
     <div class="chart-content">
       <div class="chart-section">
@@ -56,7 +56,7 @@ const props = defineProps<{
 const chartData = computed(() => {
   // Filter out hidden transactions and sort by date
   const visibleTransactions = props.transactions
-    .filter((tx) => !tx.hidden && tx.sub_category != "Credit card payment")
+    .filter((tx) => !tx.hidden && tx.transaction_type != "Transfers")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Calculate running balance (convert from cents to dollars)

@@ -113,13 +113,10 @@ fn get_expenses() -> f64 {
 
     let mut total_expense_cents = 0;
     for transaction in transactions.iter() {
-        println!("{}", transaction.transaction_type);
-
         if transaction.transaction_type == "Expenses" {
             total_expense_cents += transaction.amount;
         }
     }
-    println!("{}", total_expense_cents);
     let total_expense_dollars = (total_expense_cents as f64) / 100.0;
 
     return total_expense_dollars;
