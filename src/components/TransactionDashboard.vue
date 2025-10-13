@@ -85,9 +85,13 @@ onMounted(() => {
         </div>
         <div class="stat-card">
           <span class="stat-label">Date Range</span>
-          <span class="stat-value"
-            >{{ transactions[0].date }} -
-            {{ transactions[transactions.length - 1].date }}</span
+          <span class="stat-value" v-if="transactions.length > 0"
+            >{{ new Date(transactions[0].date).toLocaleDateString() }} -
+            {{
+              new Date(
+                transactions[transactions.length - 1].date
+              ).toLocaleDateString()
+            }}</span
           >
         </div>
         <div class="stat-card">
