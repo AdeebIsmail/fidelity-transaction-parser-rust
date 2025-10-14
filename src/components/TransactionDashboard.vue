@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { ref, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
 import TransactionLineChart from "./charts/TransactionLineChart.vue";
 import TransactionPieChart from "./charts/TransactionPieChart.vue";
-import TransactionBarChart from "./charts/TransactionBarChart.vue";
 import TransactionDoughnutChart from "./charts/TransactionDoughnutChart.vue";
 
 interface Transaction {
@@ -49,32 +47,17 @@ onMounted(() => {
       <p class="dashboard-subtitle">Visualizing {{ size }} transactions</p>
     </div>
     <div class="charts-grid">
-      <!-- <TransactionDoughnutChart :income="income" :expenses="expenses" /> -->
-      <TransactionDoughnutChart :income="income" :expenses="expenses" />
-      <TransactionPieChart :transactions="transactions" />
-      <TransactionLineChart :transactions="transactions" />
-
-      <!-- Row 1: Overview charts -->
-      <!-- <div class="chart-wrapper">
+      <div class="chart-wrapper">
         <TransactionDoughnutChart :income="income" :expenses="expenses" />
-      </div> -->
-      <!-- <div class="chart-wrapper">
-        <TransactionDoughnutChart :income="income" :expenses="expenses" />
-      </div> -->
-
-      <!-- <div class="chart-col">
-          <TransactionPieChart :transactions="transactions" />
-        </div> -->
-
-      <!-- Row 2: Trends -->
-      <!-- <div class="chart-row full-width">
+      </div>
+      <div class="chart-wrapper">
+        <TransactionPieChart :transactions="transactions" />
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-wrapper">
         <TransactionLineChart :transactions="transactions" />
-      </div> -->
-
-      <!-- Row 3: Monthly summary -->
-      <!-- <div class="chart-row full-width">
-        <TransactionBarChart :transactions="transactions" />
-      </div> -->
+      </div>
     </div>
 
     <div class="dashboard-footer">
@@ -145,26 +128,24 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   gap: 1.5rem;
+  margin-top: 2rem;
   width: 100%;
+  height: 50vh;
   box-sizing: border-box;
+  align-items: stretch; /* Ensures all items stretch to same height */
 }
 
 .chart-wrapper {
   flex: 1;
-  overflow: hidden;
-  background: transparent;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.chart-wrapper {
-  flex: 1;
+  /* Fixed height for all charts */
   overflow: hidden;
   border-radius: 12px;
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .chart-row {
@@ -219,6 +200,9 @@ onMounted(() => {
   font-size: 1.25rem;
   font-weight: 700;
   color: #2d3748;
+}
+.line-chart {
+  height: 10%;
 }
 
 /* Responsive design */

@@ -31,10 +31,6 @@ async function parseCSV() {
 onMounted(() => {
   parseCSV();
 });
-
-const emit = defineEmits<{
-  close: [];
-}>();
 </script>
 
 <template>

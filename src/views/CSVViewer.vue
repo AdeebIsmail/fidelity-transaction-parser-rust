@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { invoke } from "@tauri-apps/api/core";
 
 import DisplayCSV from "../components/DisplayCSV.vue";
 import TransactionDashboard from "../components/TransactionDashboard.vue";
