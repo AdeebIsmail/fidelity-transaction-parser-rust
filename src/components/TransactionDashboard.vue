@@ -158,13 +158,6 @@ onMounted(() => {
   display: flex;
 }
 
-.chart-col {
-  flex: 1;
-  min-height: 400px;
-  max-height: 400px;
-  width: 0; /* This forces flex items to respect flex: 1 */
-}
-
 .dashboard-footer {
   margin-top: 2rem;
   padding: 1.5rem;
