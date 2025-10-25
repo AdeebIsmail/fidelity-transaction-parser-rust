@@ -1,9 +1,11 @@
-use std::fmt::format;
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::fs;
+use csv::{ StringRecord, Writer };
+use serde::de::IntoDeserializer;
 use std::path::{ Path, PathBuf };
 use std::sync::Mutex;
 use serde::Serialize;
+use csv::ReaderBuilder;
 
 #[derive(Serialize, Clone)]
 struct Transaction {
@@ -39,32 +41,42 @@ fn list_dir(path: String) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 fn parse_csv(path: String) -> Result<Vec<Vec<String>>, String> {
-    let mut rdr = csv::Reader::from_path(path).map_err(|e| format!("csv open error: {}", e))?;
+    let mut rdr = ReaderBuilder::new()
+        .flexible(true)
+        .has_headers(false)
+        .from_path(&path)
+        .map_err(|e| format!("csv open error: {}", e))?;
     let mut rows: Vec<Vec<String>> = Vec::new();
+    let _ = rdr.records().next();
     for result in rdr.records() {
         let record = result.map_err(|e| format!("csv record error: {}", e))?;
         let row = record
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        rows.push(row);
+        if row.len() == 8 {
+            rows.push(row);
+        }
     }
     Ok(rows)
 }
-
+// Rust moves by default
 #[tauri::command]
 fn parse_transactions(path: String) -> Result<String, String> {
-    let mut rdr = csv::Reader::from_path(path).map_err(|e| format!("csv open error: {}", e))?;
+    let mut rdr = ReaderBuilder::new()
+        .flexible(true)
+        .has_headers(false)
+        .from_path(&path)
+        .map_err(|e| format!("csv open error: {}", e))?;
     let mut transactions: Vec<Transaction> = Vec::new();
     let mut count: i32 = 0;
-
     for result in rdr.records() {
         let record = result.map_err(|e| format!("csv record error: {}", e))?;
         let row = record
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        if count >= 1 {
+        if count >= 2 && row.len() == 8 {
             // Skip header row
             transactions.push(build_transaction(row));
         }

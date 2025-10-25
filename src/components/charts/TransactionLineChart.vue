@@ -143,10 +143,9 @@ const chartOptions = computed(() => ({
 
           if (datasetLabel === "Individual Transactions") {
             // Get the transaction details for individual transaction points
+            // Use the SAME filtering logic as chart data
             const visibleTransactions = props.transactions
-              .filter(
-                (tx) => !tx.hidden && tx.sub_category != "Credit card payment"
-              )
+              .filter((tx) => !tx.hidden && tx.transaction_type != "Transfers")
               .sort(
                 (a, b) =>
                   new Date(a.date).getTime() - new Date(b.date).getTime()
