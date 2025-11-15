@@ -10,11 +10,19 @@
       </div>
       <div class="chart-summary">
         <div class="summary-item">
-          <span class="summary-label">Total Income:</span>
+          <span
+            class="summary-label-view"
+            @click="displayItems(props.transactions_income)"
+            >Total Income:</span
+          >
           <span class="summary-value income">${{ props.income }}</span>
         </div>
         <div class="summary-item">
-          <span class="summary-label">Total Expenses:</span>
+          <span
+            class="summary-label-view"
+            @click="displayItems(props.transactions_expenses)"
+            >Total Expenses:</span
+          >
           <span class="summary-value expense">${{ props.expenses }}</span>
         </div>
         <div class="summary-item">
@@ -28,19 +36,40 @@
         </div>
       </div>
     </div>
+
+    <DisplayItems
+      v-model="showDisplayItems"
+      :transactions="displayData"
+      :title="modalTitle"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "vue-chartjs";
+import DisplayItems from "../DisplayItems.vue";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+interface Transaction {
+  date: string;
+  description: string;
+  amount: number;
+  account_name: string;
+  category: string;
+  transaction_type: string;
+  sub_category: string;
+  hidden: boolean;
+}
 
 const props = defineProps<{
   income: number;
   expenses: number;
+  transactions_expenses: Transaction[];
+  transactions_income: Transaction[];
+  transactions: Transaction[];
 }>();
 
 const netAmount = computed(() => props.income + props.expenses);
@@ -93,6 +122,26 @@ const chartOptions = computed(() => ({
     },
   },
 }));
+
+const showDisplayItems = ref(false);
+const modalTitle = ref("Transaction Details");
+const displayData = ref<Transaction[]>([]);
+const displayItems = (transactions: Transaction[]) => {
+  if (transactions && transactions.length > 0) {
+    modalTitle.value = `Transactions (${transactions.length} total)`;
+    displayData.value = transactions;
+    showDisplayItems.value = true;
+  }
+};
+
+watch(showDisplayItems, () => {
+  console.log(showDisplayItems);
+  if (showDisplayItems.value) {
+    document.documentElement.style.overflow = "hidden";
+  } else {
+    document.documentElement.style.overflow = "auto";
+  }
+});
 </script>
 
 <style scoped>
@@ -190,6 +239,17 @@ const chartOptions = computed(() => ({
   flex-shrink: 0;
   margin-right: 1rem;
   font-size: 0.9rem;
+}
+.summary-label-view {
+  color: #6b7280;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-right: 1rem;
+  font-size: 0.9rem;
+}
+.summary-label-view:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .summary-value {

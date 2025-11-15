@@ -11,7 +11,7 @@ use csv::ReaderBuilder;
 struct Transaction {
     date: String,
     description: String,
-    amount: i64,
+    amount: f64,
     account_name: String,
     category: String,
     transaction_type: String,
@@ -44,6 +44,7 @@ fn parse_csv(path: String) -> Result<Vec<Vec<String>>, String> {
     let mut rdr = ReaderBuilder::new()
         .flexible(true)
         .has_headers(false)
+        .trim(csv::Trim::All)
         .from_path(&path)
         .map_err(|e| format!("csv open error: {}", e))?;
     let mut rows: Vec<Vec<String>> = Vec::new();
@@ -52,7 +53,7 @@ fn parse_csv(path: String) -> Result<Vec<Vec<String>>, String> {
         let record = result.map_err(|e| format!("csv record error: {}", e))?;
         let row = record
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
         if row.len() == 8 {
             rows.push(row);
@@ -66,6 +67,7 @@ fn parse_transactions(path: String) -> Result<String, String> {
     let mut rdr = ReaderBuilder::new()
         .flexible(true)
         .has_headers(false)
+        .trim(csv::Trim::All)
         .from_path(&path)
         .map_err(|e| format!("csv open error: {}", e))?;
     let mut transactions: Vec<Transaction> = Vec::new();
@@ -74,7 +76,7 @@ fn parse_transactions(path: String) -> Result<String, String> {
         let record = result.map_err(|e| format!("csv record error: {}", e))?;
         let row = record
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
         if count >= 2 && row.len() == 8 {
             // Skip header row
@@ -107,33 +109,52 @@ fn get_transaction_count() -> usize {
 fn get_income() -> f64 {
     let transactions = TRANSACTIONS.lock().unwrap();
 
-    let mut total_income_cents = 0;
+    let mut total_income = 0.0;
     for transaction in transactions.iter() {
         if transaction.transaction_type == "Income" {
-            total_income_cents += transaction.amount;
+            total_income += transaction.amount;
         }
     }
 
-    let total_income_dollars = (total_income_cents as f64) / 100.0;
-
-    return total_income_dollars;
+    return total_income;
 }
+#[tauri::command]
+fn get_income_transactions() -> Vec<Transaction> {
+    let transactions = TRANSACTIONS.lock().unwrap();
+    let mut transactions_income: Vec<Transaction> = Vec::new();
+    for transaction in transactions.iter() {
+        if transaction.transaction_type == "Income" {
+            transactions_income.push(transaction.clone());
+        }
+    }
 
+    return transactions_income;
+}
 #[tauri::command]
 fn get_expenses() -> f64 {
     let transactions = TRANSACTIONS.lock().unwrap();
 
-    let mut total_expense_cents = 0;
+    let mut total_expenses = 0.0;
     for transaction in transactions.iter() {
         if transaction.transaction_type == "Expenses" {
-            total_expense_cents += transaction.amount;
+            total_expenses += transaction.amount;
         }
     }
-    let total_expense_dollars = (total_expense_cents as f64) / 100.0;
 
-    return total_expense_dollars;
+    return total_expenses;
 }
+#[tauri::command]
+fn get_expenses_transactions() -> Vec<Transaction> {
+    let transactions = TRANSACTIONS.lock().unwrap();
+    let mut transactions_expense: Vec<Transaction> = Vec::new();
+    for transaction in transactions.iter() {
+        if transaction.transaction_type == "Expenses" {
+            transactions_expense.push(transaction.clone());
+        }
+    }
 
+    return transactions_expense;
+}
 fn build_transaction(row: Vec<String>) -> Transaction {
     // Debug output to see what's in each column
 
@@ -149,12 +170,12 @@ fn build_transaction(row: Vec<String>) -> Transaction {
     });
 
     // Convert to cents (i64) to avoid floating point precision issues
-    let amount_cents = (amount * 100.0).round() as i64;
+    // let amount_cents: i64 = (amount * 100.0).round() as i64;
 
     Transaction {
         date: row.get(0).unwrap_or(&"".to_string()).clone(),
         description: row.get(1).unwrap_or(&"".to_string()).clone(),
-        amount: amount_cents,
+        amount: amount,
         account_name: row.get(3).unwrap_or(&"".to_string()).clone(),
         transaction_type: row.get(4).unwrap_or(&"".to_string()).clone(),
         category: row.get(5).unwrap_or(&"".to_string()).clone(),
@@ -177,7 +198,9 @@ pub fn run() {
                 get_transaction_count,
                 get_income,
                 get_expenses,
-                get_transactions
+                get_transactions,
+                get_income_transactions,
+                get_expenses_transactions
             ]
         )
         .run(tauri::generate_context!())

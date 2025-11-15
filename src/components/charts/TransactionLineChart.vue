@@ -41,7 +41,7 @@ ChartJS.register(
 interface Transaction {
   date: string;
   description: string;
-  amount: number; // Amount in cents
+  amount: number; // Amount in dollars
   account_name: string;
   category: string;
   transaction_type: string;
@@ -59,10 +59,10 @@ const chartData = computed(() => {
     .filter((tx) => !tx.hidden && tx.transaction_type != "Transfers")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Calculate running balance (convert from cents to dollars)
+  // Calculate running balance
   let runningBalance = 0;
   const balanceData = visibleTransactions.map((tx) => {
-    runningBalance += tx.amount / 100; // Convert cents to dollars
+    runningBalance += tx.amount;
     return runningBalance;
   });
 
@@ -102,7 +102,7 @@ const chartData = computed(() => {
         pointBorderColor: "#fff",
         pointBorderWidth: 2,
         pointRadius: 5,
-        data: visibleTransactions.map((tx) => tx.amount / 100), // Convert cents to dollars
+        data: visibleTransactions.map((tx) => tx.amount),
         tension: 0.2,
         showLine: false, // Show only points for individual transactions
       },

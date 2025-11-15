@@ -21,12 +21,17 @@ const income = ref(0.0);
 const expenses = ref(0.0);
 const size = ref(0);
 const transactions = ref<Transaction[]>([]);
+const transactions_expenses = ref<Transaction[]>([]);
+const transactions_income = ref<Transaction[]>([]);
 
 async function retrieveTransactionData() {
   income.value = parseFloat(await invoke<string>("get_income"));
   expenses.value = parseFloat(await invoke<string>("get_expenses"));
   size.value = parseInt(await invoke<string>("get_transaction_count"));
   transactions.value = await invoke<[]>("get_transactions");
+  transactions_expenses.value = await invoke<[]>("get_expenses_transactions");
+  transactions_income.value = await invoke<[]>("get_income_transactions");
+
   transactions.value.sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -48,7 +53,13 @@ onMounted(() => {
     </div>
     <div class="charts-grid">
       <div class="chart-wrapper">
-        <TransactionDoughnutChart :income="income" :expenses="expenses" />
+        <TransactionDoughnutChart
+          :income="income"
+          :expenses="expenses"
+          :transactions_expenses="transactions_expenses"
+          :transactions_income="transactions_income"
+          :transactions="transactions"
+        />
       </div>
       <div class="chart-wrapper">
         <TransactionPieChart :transactions="transactions" />
